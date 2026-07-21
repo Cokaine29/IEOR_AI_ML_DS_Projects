@@ -78,6 +78,11 @@ if __name__ == "__main__":
     ocsvm_scores = np.load(os.path.join(scores_dir, "ocsvm_scores.npy"))
     ae_scores = np.load(os.path.join(scores_dir, "ae_scores.npy"))
     
+    # Try loading 2D Autoencoder scores if they exist
+    ae2d_scores = None
+    if os.path.exists(os.path.join(scores_dir, "ae2d_scores.npy")):
+        ae2d_scores = np.load(os.path.join(scores_dir, "ae2d_scores.npy"))
+    
     # Evaluate Isolation Forest
     if_results = evaluate_model(if_scores, y, meta.copy(), "Isolation Forest")
     
@@ -85,10 +90,17 @@ if __name__ == "__main__":
     ocsvm_results = evaluate_model(ocsvm_scores, y, meta.copy(), "One-Class SVM")
     
     # Evaluate Autoencoder
-    ae_results = evaluate_model(ae_scores, y, meta.copy(), "Autoencoder")
+    ae_results = evaluate_model(ae_scores, y, meta.copy(), "Autoencoder (1D)")
     
     # Combine results
-    all_results = pd.concat([if_results, ocsvm_results, ae_results], ignore_index=True)
+    dfs_to_concat = [if_results, ocsvm_results, ae_results]
+    
+    # Evaluate 2D Autoencoder if available
+    if ae2d_scores is not None:
+        ae2d_results = evaluate_model(ae2d_scores, y, meta.copy(), "Autoencoder (2D Spec)")
+        dfs_to_concat.append(ae2d_results)
+        
+    all_results = pd.concat(dfs_to_concat, ignore_index=True)
     
     # Save to CSV
     all_results.to_csv(os.path.join(scores_dir, "evaluation_results.csv"), index=False)
