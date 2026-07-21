@@ -1,0 +1,17 @@
+# Data files (these are large and should not be tracked)
+01_Anomaly_Detection_Autoencoders/data/
+*.mat
+*.npy
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environments
+venv/
+env/
+.env
