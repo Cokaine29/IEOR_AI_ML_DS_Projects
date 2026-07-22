@@ -36,6 +36,12 @@ graph TD
     K -->|"Score > Threshold"| M["Anomaly / Fault Detected!"]
 ```
 
+### Step-by-Step Workflow
+1. **Data Acquisition:** Downloaded 12kHz raw drive-end accelerometer data from the Case Western Reserve University (CWRU) benchmark and segmented it into fixed-length windows of 1024 samples.
+2. **Parallel Preprocessing:** For classical models, we extracted 15 hand-crafted statistical features (e.g., Kurtosis, RMS, Spectral Entropy). For the Deep Learning model, we transformed the raw time-series into 2D time-frequency Spectrograms using a Short-Time Fourier Transform (STFT).
+3. **Unsupervised Training:** To mimic real-world industrial constraints (where failure data is scarce), all models were trained **exclusively on healthy bearing data**. The Autoencoder learns to compress and reconstruct normal vibrations.
+4. **Anomaly Scoring & Evaluation:** We fed unseen mixed data (healthy + faulty) into the models. The Autoencoder flags faults based on High Reconstruction Error (MSE), while the classical models flag anomalies based on distance metrics.
+
 ---
 
 ## 2. Dataset Description

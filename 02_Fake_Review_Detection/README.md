@@ -53,6 +53,12 @@ graph TD
     O --> P["Trustworthy 1-Paragraph Buyer Summary"]
 ```
 
+### Step-by-Step Workflow
+1. **Stylometric Analysis:** Ingest raw Amazon/Yelp reviews and extract 6 mathematical "typing behavior" features (e.g., pronoun density, exclamation counts, capitalization ratios) to capture subconscious spammer habits.
+2. **NLP Tokenization:** Process the raw semantic text using the HuggingFace `roberta-base` tokenizer.
+3. **Dual-Input Classification:** Feed the semantic text into RoBERTa and the stylometric features into a parallel Linear layer. The two embeddings are concatenated and passed through a classification head. We optimize this massive architecture efficiently on a local GPU using **LoRA (Low-Rank Adaptation)**.
+4. **Generative Summarization:** The pipeline actively drops the reviews flagged as fraudulent. The surviving "genuine" reviews are passed into a 1.6-Billion parameter Generative AI model (**BART**) which synthesizes them into a single, highly readable summary for the end-user.
+
 ## Technologies Used
 - PyTorch (Neural Networks, CUDA)
 - Hugging Face Transformers & Datasets (RoBERTa, BART)
