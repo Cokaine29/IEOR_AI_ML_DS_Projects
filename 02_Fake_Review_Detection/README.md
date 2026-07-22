@@ -5,6 +5,11 @@ This project simulates a real-world Trust & Safety pipeline designed for an e-co
 
 Once the fraudulent reviews are filtered out, the remaining genuine reviews are passed to a Generative AI model (**BART**) to synthesize a trustworthy summary for the buyer.
 
+## Final Results (GPU Training)
+The custom Dual-Input Fraud Detector was trained on the complete dataset (40,526 reviews) using an NVIDIA RTX 3050 GPU, yielding state-of-the-art results:
+- **F1 Score:** `0.9523`
+- **ROC-AUC:** `0.9929`
+
 ## Features
 - **Stylometric Feature Extraction:** Identifies the mathematical typing behavior of spammers versus genuine buyers.
 - **Dual-Input Classifier (RoBERTa + LoRA):** A custom PyTorch model that merges 768-dimensional Text Embeddings (from RoBERTa) with 6-dimensional Behavioral Embeddings.
@@ -12,7 +17,7 @@ Once the fraudulent reviews are filtered out, the remaining genuine reviews are 
 - **Generative Summarization:** Uses `facebook/bart-large-cnn` to read the surviving genuine reviews and output a concise, human-readable summary.
 
 ## Technologies Used
-- PyTorch (Neural Networks)
+- PyTorch (Neural Networks, CUDA)
 - Hugging Face Transformers & Datasets (RoBERTa, BART)
 - PEFT (LoRA)
 - Pandas & NumPy
@@ -23,6 +28,7 @@ Once the fraudulent reviews are filtered out, the remaining genuine reviews are 
 - `src/train_classifier.py`: The custom Dual-Input PyTorch architecture and training loop.
 - `src/summarizer.py`: The pipeline filtering and BART summarization script.
 - `notebooks/`: Contains the step-by-step Jupyter Notebooks for Data Exploration and the End-to-End Pipeline demonstration.
+- `Report.md`: Full analysis of the stylometric findings and deep learning architecture.
 
 ## How to Run
 1. Open the `notebooks/01_data_exploration.ipynb` to see the statistical differences in how spammers type.
