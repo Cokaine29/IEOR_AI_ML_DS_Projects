@@ -11,23 +11,29 @@ We aim to compare the performance and **early-warning detection latency** of dee
 ### Architecture Flowchart
 ```mermaid
 graph TD
-    A["Raw CWRU Vibration Data"] --> B["Fixed-length Windows (1024 samples)"]
-    B --> C["Short-Time Fourier Transform (STFT)"]
-    C --> D["2D Spectrogram Images"]
+    A["Raw CWRU Vibration Data (1024-sample windows)"] --> B{"Benchmarking Paths"}
+    
+    %% Classical ML Path
+    B -->|"Path 1: Classical ML"| C["Manual Feature Engineering"]
+    C --> D["Extract 15 Features (RMS, Kurtosis, etc.)"]
+    D --> E["Isolation Forest / One-Class SVM"]
+    
+    %% Deep Learning Path
+    B -->|"Path 2: Deep Learning"| F["Short-Time Fourier Transform (STFT)"]
+    F --> G["2D Spectrogram Images"]
     
     subgraph 2D Convolutional Autoencoder
-        E["Encoder (Conv2D + MaxPooling)"] --> F(("Latent Bottleneck"))
-        F --> G["Decoder (ConvTranspose2D)"]
+        G --> H["Encoder (Conv2D + MaxPooling)"]
+        H --> I(("Latent Bottleneck"))
+        I --> J["Decoder (ConvTranspose2D)"]
     end
     
-    D -->|"Train: Healthy Data Only"| E
-    G --> H["Reconstructed Spectrogram"]
+    %% Evaluation
+    E --> K{"Calculate Anomaly Score"}
+    J --> K
     
-    D -.->|"Test Phase: Unseen Data"| I{"Calculate MSE Reconstruction Error"}
-    H -.-> I
-    
-    I -->|"Low Error (< Threshold)"| J["Healthy Bearing"]
-    I -->|"High Error (> Threshold)"| K["Anomaly / Fault Detected!"]
+    K -->|"Score < Threshold"| L["Healthy Bearing"]
+    K -->|"Score > Threshold"| M["Anomaly / Fault Detected!"]
 ```
 
 ---
