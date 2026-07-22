@@ -21,22 +21,36 @@ The custom Dual-Input Fraud Detector was trained on the complete dataset (40,526
 ### Architecture Flowchart
 ```mermaid
 graph TD
-    A[Raw Amazon/Yelp Reviews] --> B[Text Tokenization]
-    A --> C[Stylometric Feature Extraction]
+    A["Raw E-Commerce Reviews"] --> B["NLP Text Processing"]
+    A --> C["Stylometric Extraction"]
     
-    B --> D[RoBERTa Text Embeddings]
-    C --> E[Behavioral Embeddings]
+    %% Stylometry Branch
+    C --> D["Extract 6 Features (Pronouns, Exclamations, etc.)"]
+    D --> E["Linear Projection (16-dim)"]
     
-    D --> F((Fusion Layer))
-    E --> F
+    %% RoBERTa + LoRA Branch
+    B --> F["HuggingFace Tokenizer"]
+    F --> G["RoBERTa Base (768-dim)"]
     
-    F --> G{Classifier Head}
+    subgraph Parameter-Efficient Fine-Tuning
+        G --> H["LoRA Adapters (Rank=8)"]
+        H -.->|"Freezes Base Weights"| G
+    end
     
-    G -->|Fake/Spam| H[Drop Review]
-    G -->|Genuine| I[Surviving Reviews]
+    %% Fusion
+    H --> I(("Concatenation Fusion Layer (784-dim)"))
+    E --> I
     
-    I --> J(BART Generative AI Summarizer)
-    J --> K[Trustworthy Final Buyer Summary]
+    I --> J["Sigmoid Classifier Head"]
+    
+    %% Decision & Generative AI
+    J --> K{"Is Fake?"}
+    K -->|"Yes (p > 0.5)"| L["Drop Fraudulent Review"]
+    K -->|"No (p < 0.5)"| M["Keep Genuine Review"]
+    
+    M --> N["Batch Surviving Reviews"]
+    N --> O["BART-Large-CNN (Generative Summarizer)"]
+    O --> P["Trustworthy 1-Paragraph Buyer Summary"]
 ```
 
 ## Technologies Used
