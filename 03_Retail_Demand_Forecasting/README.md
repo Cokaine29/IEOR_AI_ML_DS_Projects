@@ -18,6 +18,26 @@ Through iterative experimentation (V1 -> V3), we developed the following routing
    - **Model:** `LightGBM Regressor` (The Kaggle-Winning Algorithm)
    - **Why it works:** Deep LSTMs completely failed (predicted a flat mean line) because they lacked temporal context. By engineering explicit time-series features (`lag_1`, `lag_7`, `lag_28`, `rolling_mean_7`, `day_of_week`), LightGBM perfectly predicted massive random spikes.
 
+## System Architecture Flowchart
+```mermaid
+graph TD
+    A[Walmart M5 Dataset] --> B{Demand Profiling}
+    
+    B -->|Micro-Level & Continuous| C[Steady Demand]
+    B -->|Macro-Level & Aggregated| D[Seasonal Demand]
+    B -->|Micro-Level & Sparse| E[Volatile Demand]
+    
+    C --> F[SARIMAX<br/>5,1,2 x 1,1,1,7]
+    D --> G[Facebook Prophet<br/>Multiplicative Mode]
+    
+    E --> H[Feature Engineering<br/>Lags & Rolling Means]
+    H --> I[LightGBM Regressor]
+    
+    F --> J[Forecast Output]
+    G --> J
+    I --> J
+```
+
 ## Step-by-Step Workflow
 1. **Data Acquisition:** Load the official Walmart M5 Forecasting dataset (daily sales across CA, TX, WI).
 2. **Demand Profiling:** Segment products into Steady, Seasonal, and Volatile time-series.
