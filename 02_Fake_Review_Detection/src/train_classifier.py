@@ -59,15 +59,21 @@ class DualInputFraudDetector(nn.Module):
         return self.classifier(fused)
 
 def train():
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"\\n{'='*50}")
+    print(f"🚀 INITIALIZING NEURAL NETWORK ON: {device.type.upper()}")
+    if device.type == 'cuda':
+        print(f"GPU Detected: {torch.cuda.get_device_name(0)}")
+        print(f"VRAM Available: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
+    print(f"{'='*50}\\n")
+
     print("Loading tokenized dataset...")
     dataset = load_from_disk(os.path.join("data", "processed", "tokenized_dataset"))
     df_raw = pd.read_csv("data/processed/reviews_with_stylometry.csv")
     
-    # We will use a highly subsampled dataset so you can run it on CPU in 1 minute!
-    # In a real environment, you would train on the full 40k on a GPU.
-    print("Subsampling for local CPU demonstration (500 train, 100 test)...")
-    train_ds = dataset['train'].select(range(500))
-    test_ds = dataset['test'].select(range(100))
+    print("Preparing the full 40,000+ review dataset for GPU Training...")
+    train_ds = dataset['train']
+    test_ds = dataset['test']
     
     # Match the stylometry features for the subsample
     # The dataset mapping preserves order, but to be perfectly safe we extract from the Dataset object directly
@@ -82,19 +88,20 @@ def train():
         stylo = torch.tensor([[x[col] for col in stylo_cols] for x in batch], dtype=torch.float32)
         return input_ids, attention_mask, stylo, labels
 
-    train_loader = DataLoader(train_ds, batch_size=16, shuffle=True, collate_fn=collate_fn)
-    test_loader = DataLoader(test_ds, batch_size=16, collate_fn=collate_fn)
+    # Increased batch size to 32 to utilize the 6GB VRAM on the RTX 3050
+    train_loader = DataLoader(train_ds, batch_size=32, shuffle=True, collate_fn=collate_fn)
+    test_loader = DataLoader(test_ds, batch_size=32, collate_fn=collate_fn)
 
-    model = DualInputFraudDetector()
+    model = DualInputFraudDetector().to(device)
     
     # We use Binary Cross Entropy Loss because it's a 0 (Real) or 1 (Fake) classification
     criterion = nn.BCELoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
     
-    print("\\n=== Starting Training (1 Epoch) ===")
+    print("\\n=== Starting GPU Training (1 Epoch on Full Data) ===")
     model.train()
     for batch in tqdm(train_loader, desc="Training"):
-        input_ids, attention_mask, stylo, labels = batch
+        input_ids, attention_mask, stylo, labels = [b.to(device) for b in batch]
         
         optimizer.zero_grad()
         predictions = model(input_ids, attention_mask, stylo).squeeze()
@@ -109,10 +116,10 @@ def train():
     
     with torch.no_grad():
         for batch in tqdm(test_loader, desc="Testing"):
-            input_ids, attention_mask, stylo, labels = batch
+            input_ids, attention_mask, stylo, labels = [b.to(device) for b in batch]
             predictions = model(input_ids, attention_mask, stylo).squeeze()
-            all_preds.extend(predictions.tolist())
-            all_labels.extend(labels.tolist())
+            all_preds.extend(predictions.cpu().tolist())
+            all_labels.extend(labels.cpu().tolist())
             
     # Calculate metrics
     preds_binary = [1 if p >= 0.5 else 0 for p in all_preds]
