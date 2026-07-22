@@ -11,17 +11,23 @@ We aim to compare the performance and **early-warning detection latency** of dee
 ### Architecture Flowchart
 ```mermaid
 graph TD
-    A[CWRU Bearing Sensor Data] --> B[Data Preprocessing]
-    B --> C[Healthy Vibration Signals]
-    B --> D[Faulty Vibration Signals]
+    A["Raw CWRU Vibration Data"] --> B["Fixed-length Windows (1024 samples)"]
+    B --> C["Short-Time Fourier Transform (STFT)"]
+    C --> D["2D Spectrogram Images"]
     
-    C -->|Train Only on Healthy| E(Deep Autoencoder Neural Network)
+    subgraph 2D Convolutional Autoencoder
+        E["Encoder (Conv2D + MaxPooling)"] --> F(("Latent Bottleneck"))
+        F --> G["Decoder (ConvTranspose2D)"]
+    end
     
-    E -->|Test on Mixed Data| F{Reconstruction Error Calculation}
-    D -->|Test on Mixed Data| F
+    D -->|"Train: Healthy Data Only"| E
+    G --> H["Reconstructed Spectrogram"]
     
-    F -->|Low Error| G[Healthy State]
-    F -->|High Error| H[Fault Detected!]
+    D -.->|"Test Phase: Unseen Data"| I{"Calculate MSE Reconstruction Error"}
+    H -.-> I
+    
+    I -->|"Low Error (< Threshold)"| J["Healthy Bearing"]
+    I -->|"High Error (> Threshold)"| K["Anomaly / Fault Detected!"]
 ```
 
 ---
