@@ -1,5 +1,7 @@
 import nbformat as nbf
+import os
 
+os.makedirs('notebooks', exist_ok=True)
 nb = nbf.v4.new_notebook()
 
 text1 = """# Phase 1: Fake Review Data Exploration & Stylometry
