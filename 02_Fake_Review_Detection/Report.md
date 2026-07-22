@@ -33,7 +33,13 @@ The model was trained on the full dataset of 40,526 reviews using an NVIDIA RTX 
 - **F1 Score:** `0.9523`
 - **ROC-AUC:** `0.9929`
 
-*Conclusion: The dual-input architecture is exceptionally robust, correctly identifying fraudulent behavior with >95% accuracy.*
+### Baseline Comparison (The "Traditional" Approach)
+Before building the deep learning architecture, we established a traditional NLP baseline using **TF-IDF + Random Forest** (the standard bootcamp approach). 
+
+- **TF-IDF Baseline F1 Score:** `0.8480`
+- **Dual-Input PyTorch F1 Score:** `0.9523`
+
+*Conclusion: The dual-input architecture effectively eliminates the performance ceiling of traditional NLP, yielding a massive +10% absolute improvement in F1 score by catching the behavioral patterns that standard word-frequency models miss.*
 
 ---
 
