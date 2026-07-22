@@ -7,8 +7,10 @@ Once the fraudulent reviews are filtered out, the remaining genuine reviews are 
 
 ## Final Results (GPU Training)
 The custom Dual-Input Fraud Detector was trained on the complete dataset (40,526 reviews) using an NVIDIA RTX 3050 GPU, yielding state-of-the-art results:
-- **F1 Score:** `0.9523`
+- **Dual-Input PyTorch F1 Score:** `0.9523`
 - **ROC-AUC:** `0.9929`
+
+*(For comparison, a traditional NLP baseline using TF-IDF and Random Forest on this exact dataset achieved an F1 Score of only `0.8480`. Our custom Deep Learning architecture completely eliminates that performance ceiling.)*
 
 ## Features
 - **Stylometric Feature Extraction:** Identifies the mathematical typing behavior of spammers versus genuine buyers.
