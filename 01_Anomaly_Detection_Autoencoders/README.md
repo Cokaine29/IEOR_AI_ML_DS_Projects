@@ -8,6 +8,22 @@ The objective of this project is to build an unsupervised predictive maintenance
 
 We aim to compare the performance and **early-warning detection latency** of deep representation learning (1D Convolutional Autoencoders) against classical machine learning baselines (Isolation Forest and One-Class SVM) that rely on hand-crafted statistical features.
 
+### Architecture Flowchart
+```mermaid
+graph TD
+    A[CWRU Bearing Sensor Data] --> B[Data Preprocessing]
+    B --> C[Healthy Vibration Signals]
+    B --> D[Faulty Vibration Signals]
+    
+    C -->|Train Only on Healthy| E(Deep Autoencoder Neural Network)
+    
+    E -->|Test on Mixed Data| F{Reconstruction Error Calculation}
+    D -->|Test on Mixed Data| F
+    
+    F -->|Low Error| G[Healthy State]
+    F -->|High Error| H[Fault Detected!]
+```
+
 ---
 
 ## 2. Dataset Description
@@ -72,6 +88,7 @@ To fairly evaluate the models, we set the anomaly threshold using **only normal 
 
 ### Key Takeaways
 1. **Exceptional Performance Across the Board:** Because the CWRU dataset is a relatively "clean" laboratory benchmark, all models achieved near-perfect separation (>97% F1) between normal and faulty bearings, even at the earliest degradation stage (0.007").
+
 2. **Deep Learning vs. Domain Knowledge:** The classical models required us to manually engineer 15 domain-specific statistical features (like Kurtosis and Spectral Entropy) to achieve this performance. 
 3. **Time-Frequency Dominance:** By converting the raw vibration sequences into 2D Spectrograms using a Short-Time Fourier Transform (STFT), the **2D Convolutional Autoencoder** perfectly matched the Isolation Forest (0.9926 overall F1 score). This proves that deep representation learning on time-frequency images can completely replace manual feature engineering in predictive maintenance pipelines without sacrificing early-warning detection latency.
 

@@ -18,6 +18,27 @@ The custom Dual-Input Fraud Detector was trained on the complete dataset (40,526
 - **Parameter-Efficient Fine-Tuning (PEFT):** Uses LoRA to train only the adapter layers of RoBERTa, allowing for fast iteration.
 - **Generative Summarization:** Uses `facebook/bart-large-cnn` to read the surviving genuine reviews and output a concise, human-readable summary.
 
+### Architecture Flowchart
+```mermaid
+graph TD
+    A[Raw Amazon/Yelp Reviews] --> B[Text Tokenization]
+    A --> C[Stylometric Feature Extraction]
+    
+    B --> D[RoBERTa Text Embeddings]
+    C --> E[Behavioral Embeddings]
+    
+    D --> F((Fusion Layer))
+    E --> F
+    
+    F --> G{Classifier Head}
+    
+    G -->|Fake/Spam| H[Drop Review]
+    G -->|Genuine| I[Surviving Reviews]
+    
+    I --> J(BART Generative AI Summarizer)
+    J --> K[Trustworthy Final Buyer Summary]
+```
+
 ## Technologies Used
 - PyTorch (Neural Networks, CUDA)
 - Hugging Face Transformers & Datasets (RoBERTa, BART)
