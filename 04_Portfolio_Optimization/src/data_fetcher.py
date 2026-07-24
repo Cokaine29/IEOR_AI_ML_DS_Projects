@@ -5,11 +5,30 @@ import os
 def fetch_data(tickers, start_date, end_date, output_path):
     print(f"Fetching data for {len(tickers)} tickers from {start_date} to {end_date}...")
     
-    # Download adjusted close prices
-    df = yf.download(tickers, start=start_date, end=end_date)['Adj Close']
+    data = {}
+    for ticker in tickers:
+        try:
+            # Using yf.Ticker().history() avoids all MultiIndex issues
+            t = yf.Ticker(ticker)
+            hist = t.history(start=start_date, end=end_date)
+            
+            # The history dataframe always has a 'Close' column
+            if not hist.empty and 'Close' in hist.columns:
+                data[ticker] = hist['Close']
+            else:
+                print(f"No data returned for {ticker}")
+        except Exception as e:
+            print(f"Failed to download {ticker}: {e}")
+            
+    df = pd.DataFrame(data)
     
+    # Strip timezone info from index to make it naive datetime
+    if df.index.tz is not None:
+        df.index = df.index.tz_convert(None)
+        
     # Forward fill missing data, then drop any rows that still have NaNs
     df = df.ffill().dropna()
+
     
     print(f"Downloaded shape: {df.shape}")
     
