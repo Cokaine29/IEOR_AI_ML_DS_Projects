@@ -2,16 +2,28 @@ import os
 import pandas as pd
 from datasets import Dataset, DatasetDict
 from transformers import RobertaTokenizer
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GroupShuffleSplit
 
 def load_and_tokenize():
-    print("Loading processed reviews...")
-    df = pd.read_csv("data/processed/reviews_with_stylometry.csv")
+    print("Loading clustered reviews...")
+    df = pd.read_csv("data/processed/reviews_with_groups.csv")
     
-    # Stratified split 80/20
-    train_df, test_df = train_test_split(df, test_size=0.2, random_state=42, stratify=df['is_fake'])
+    # GroupShuffleSplit to prevent data leakage from near-duplicate templates
+    print("Splitting data (GroupShuffleSplit)...")
+    gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+    train_idx, test_idx = next(gss.split(df, groups=df['group_id']))
     
-    print(f"Train size: {len(train_df)}, Test size: {len(test_df)}")
+    train_df = df.iloc[train_idx]
+    test_df = df.iloc[test_idx]
+    
+    # Sanity check
+    train_groups = set(train_df['group_id'])
+    test_groups = set(test_df['group_id'])
+    overlap = train_groups.intersection(test_groups)
+    assert len(overlap) == 0, f"DATA LEAKAGE DETECTED! {len(overlap)} groups in both sets."
+    
+    print(f"Train size: {len(train_df)} (Groups: {len(train_groups)})")
+    print(f"Test size:  {len(test_df)} (Groups: {len(test_groups)})")
     
     # Convert to Hugging Face Dataset format
     train_ds = Dataset.from_pandas(train_df)

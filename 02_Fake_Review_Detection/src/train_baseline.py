@@ -1,23 +1,38 @@
-﻿import pandas as pd
-from sklearn.model_selection import train_test_split
+import pandas as pd
+from sklearn.model_selection import GroupShuffleSplit
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score, roc_auc_score
 
 def run_baseline():
     print("\n" + "="*50)
-    print("ðŸš€ RUNNING TRADITIONAL BASELINE (TF-IDF + Random Forest)")
+    print("--- RUNNING TRADITIONAL BASELINE (TF-IDF + Random Forest) ---")
+    print("   [LEAKAGE FIXED: GroupShuffleSplit on Templates]")
     print("="*50 + "\n")
     
-    print("1. Loading raw dataset...")
-    df = pd.read_csv("data/processed/reviews_with_stylometry.csv")
+    print("1. Loading clustered dataset...")
+    df = pd.read_csv("data/processed/reviews_with_groups.csv")
     
     # We will only use the text (ignoring stylometry) just like a standard bootcamp project
     texts = df['text'].fillna("")
     labels = df['is_fake']
+    groups = df['group_id']
     
-    print("2. Splitting data...")
-    X_train, X_test, y_train, y_test = train_test_split(texts, labels, test_size=0.2, random_state=42)
+    print("2. Splitting data (GroupShuffleSplit)...")
+    gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+    train_idx, test_idx = next(gss.split(texts, labels, groups=groups))
+    
+    X_train, X_test = texts.iloc[train_idx], texts.iloc[test_idx]
+    y_train, y_test = labels.iloc[train_idx], labels.iloc[test_idx]
+    
+    # Sanity check
+    train_groups = set(groups.iloc[train_idx])
+    test_groups = set(groups.iloc[test_idx])
+    overlap = train_groups.intersection(test_groups)
+    assert len(overlap) == 0, f"DATA LEAKAGE DETECTED! {len(overlap)} groups in both sets."
+    
+    print(f"   Train size: {len(X_train)} (Groups: {len(train_groups)})")
+    print(f"   Test size:  {len(X_test)} (Groups: {len(test_groups)})")
     
     print("3. Converting text to TF-IDF vectors (Old School NLP)...")
     vectorizer = TfidfVectorizer(max_features=5000, stop_words='english')

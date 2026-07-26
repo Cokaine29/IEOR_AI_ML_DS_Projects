@@ -60,12 +60,13 @@ class DualInputFraudDetector(nn.Module):
 
 def train():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"\\n{'='*50}")
-    print(f"🚀 INITIALIZING NEURAL NETWORK ON: {device.type.upper()}")
+    print("\n" + "="*50)
+    print(f"--- INITIALIZING NEURAL NETWORK ON: {device.type.upper()} ---")
+    print("="*50)
     if device.type == 'cuda':
         print(f"GPU Detected: {torch.cuda.get_device_name(0)}")
         print(f"VRAM Available: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
-    print(f"{'='*50}\\n")
+    print(f"{'='*50}\n")
 
     print("Loading tokenized dataset...")
     dataset = load_from_disk(os.path.join("data", "processed", "tokenized_dataset"))
