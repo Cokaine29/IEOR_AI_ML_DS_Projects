@@ -106,9 +106,9 @@ profile and showed which forecasting approach fits which pattern, rather than re
 number that hides the real variance."
 
 **Final Resume Bullets:**
-- Benchmarked **ARIMA**, **Prophet**, and **LightGBM** for SKU-level demand on the **M5 (Walmart) dataset**. Overcame severe MAPE artifacts on intermittent demand by implementing **WMAPE**, proving Prophet and LightGBM tied (~46% WMAPE) on point-forecasting volatile items.
-- Upgraded the pipeline to **Quantile Regression (P10/P50/P90) in LightGBM** to move beyond point-forecasts, generating a mathematically calibrated **80.0% prediction interval** (hitting the exact 80% theoretical target) to capture volatile demand spikes.
-- Implemented a dynamic **Safety Stock policy** using the P90 forecast, reducing the simulated stockout rate from **50.0%** (naive P50 mean) down to **16.7%** — a **67% reduction in stockouts** without over-inflating inventory.
+- Built an **OR-routed demand forecasting pipeline** for the **Walmart M5** dataset (1,913 days), segmenting products into steady/seasonal/volatile demand profiles and benchmarking **ARIMA**, **Prophet**, and **LightGBM** per profile using **WMAPE** (correcting an initial MAPE-based comparison that was distorted by near-zero-demand outliers).
+- Selected **LightGBM** (quantile objective) for volatile items — not for higher point-forecast accuracy (statistically tied with Prophet at ~46-48% WMAPE) but for its ability to generate feature-driven quantile regression (P10/P50/P90) that Prophet cannot natively support.
+- Used the P90 quantile as a dynamic **safety stock** policy, achieving **80.0% empirical P10–P90 coverage** and cutting the stockout rate from 50.0% to 16.7% (a **67% reduction**).
 
 ---
 
