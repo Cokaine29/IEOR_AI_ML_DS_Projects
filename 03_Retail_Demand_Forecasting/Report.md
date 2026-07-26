@@ -1,29 +1,52 @@
-# Project 3: Retail Demand Forecasting - Final Report
+# Project 3: Retail Demand Forecasting (Walmart M5) - Final Report
 
 ## Executive Summary
-This project simulated a real-world enterprise supply chain forecasting problem using the Walmart M5 Accuracy dataset. The primary objective was to demonstrate the **No Free Lunch Theorem** in Machine Learning by proving that a single monolithic model cannot effectively predict demand for an entire retail catalog. Instead, products must be clustered into distinct Demand Profiles and routed to the algorithms best suited for their statistical characteristics.
+This project tackles the Walmart M5 Demand Forecasting dataset. The business objective is to predict 28 days of future daily sales for retail products across various states. 
 
-## Methodology & Demand Profiling
-We extracted a subset of the M5 dataset (Store: `CA_1`) and identified three fundamental demand profiles:
+While a standard machine learning approach attempts to fit a single, monolithic Deep Learning model to all data, this project takes an **Operations Research (OR)** approach. We cluster products into Demand Profiles (Steady, Seasonal, Volatile) and route them to the most mathematically appropriate algorithm. 
 
-1. **Steady Demand (Micro-Level):** Items like household essentials that sell consistently every day but exhibit mild weekly seasonality (e.g., lower sales on Sundays).
-2. **Seasonal Demand (Macro-Level):** High-level department sales (e.g., Hobbies) that exhibit massive, smooth yearly and weekly cycles.
-3. **Volatile/Intermittent Demand (Micro-Level):** Niche items that have multiple days of zero sales, followed by sudden, extreme spikes in volume.
+Crucially, in the final iteration, we upgrade the pipeline from simple **Point Forecasting** to **Probabilistic Forecasting**, turning raw ML outputs into actionable **Safety Stock** targets for inventory management.
 
-## Model Benchmarking & Results
+---
 
-### 1. Steady Demand -> SARIMAX
-- **Algorithm:** `SARIMAX (5,1,2)x(1,1,1,7)`
-- **Observation:** Basic ARIMA failed because it aggressively smoothed over the weekly dips. By adding the seasonal order `(1,1,1,7)`, the SARIMAX model successfully learned the 7-day cyclical nature of the item and tracked the exact days the sales dipped.
+## 1. Demand Profiling & The "No Free Lunch" Architecture
 
-### 2. Seasonal Demand -> Facebook Prophet
-- **Algorithm:** `Prophet (seasonality_mode='multiplicative')`
-- **Observation:** Prophet is engineered for macro-level, continuous data. When applied to a micro-level intermittent item, it failed completely. However, when applied to the aggregated **Department-Level** sales, it successfully mapped the macro-trend. Furthermore, switching to `multiplicative` mode allowed the variance of the forecasted curve to scale dynamically with the massive seasonal spikes.
+Time-series data is not homogeneous. Through iterative testing, we proved the "No Free Lunch" theorem: no single algorithm dominates all demand types.
 
-### 3. Volatile Demand -> LightGBM Regressor
-- **Algorithm:** `LightGBM` (Gradient Boosting Trees) + Feature Engineering
-- **Observation (The LSTM Failure):** We initially attempted to forecast volatile demand using a deep PyTorch LSTM (3 layers, 128 units, Huber Loss). The neural network severely underfit the data, predicting a flat mean line. Neural networks struggle with intermittent data when deprived of explicit temporal context (like the day of the week).
-- **Observation (The LightGBM Success):** We abandoned the LSTM and implemented the architecture that won the actual $25,000 Kaggle competition: LightGBM. By engineering explicit time-series features (`lag_1`, `lag_7`, `lag_28`, `rolling_mean_7`, `day_of_week`), the LightGBM model successfully caught almost every single volatile spike and structural zero. 
+### Profile A: Steady Demand (Household Essentials)
+- **Characteristics:** High volume, continuous daily sales, strong weekly seasonality (e.g., lower on Sundays).
+- **Winning Model:** `SARIMAX (5,1,2)x(1,1,1,7)`
+- **Why?** Classical statistics excel when the underlying data generating process is stationary and heavily auto-correlated. The moving average components smooth out the noise perfectly.
 
-## Conclusion
-The results of this project validate a critical concept in enterprise MLOps: **Model Routing**. Deploying massive Deep Learning models (like LSTMs) for every product in a catalog is computationally wasteful and statistically inferior to using classical models (SARIMAX) for steady products and specialized boosting trees (LightGBM) for volatile products. 
+### Profile B: Seasonal Demand (Decor & Hobbies)
+- **Characteristics:** Aggregated macro-level sales that look flat for months and then explode during the holidays.
+- **Winning Model:** `Facebook Prophet (Multiplicative Mode)`
+- **Why?** Prophet handles missing/intermittent data well. By switching from additive to multiplicative mode, Prophet dynamically scales its variance, correctly capturing the massive holiday spikes without over-predicting the flat months.
+
+### Profile C: Volatile Demand (Niche Electronics)
+- **Characteristics:** Sparse, intermittent sales punctuated by massive, seemingly random spikes.
+- **Winning Model:** `LightGBM Regressor`
+- **Why?** Pure time-series models (like LSTM) fail here because they lack context and simply predict the flat mean to minimize RMSE. By heavily engineering tabular features (`lag_1`, `lag_7`, `lag_28`, `rolling_mean_7`, `day_of_week`), LightGBM can use complex decision trees to identify the exact conditions that lead to a spike.
+
+---
+
+## 2. The Final Upgrade: Probabilistic Forecasting
+
+In V5 of the pipeline, we addressed the fatal flaw of standard ML forecasting: **Point Forecasts lack uncertainty.**
+
+If LightGBM predicts we will sell exactly 50 units, and the warehouse stocks 50 units, what happens if demand hits 60? A stockout occurs, and revenue is lost. Supply Chain managers don't care about the exact mean; they care about the worst-case scenario.
+
+### Implementation: Quantile Regression
+Instead of building a massive Temporal Fusion Transformer (TFT) that takes hours to train, we upgraded our LightGBM model to perform **Quantile Regression**.
+
+We trained three simultaneous models using the `quantile` objective:
+- **P10 (Alpha = 0.10):** The pessimistic scenario.
+- **P50 (Alpha = 0.50):** The median/expected scenario (our old point forecast).
+- **P90 (Alpha = 0.90):** The upper bound.
+
+### Business Impact: Dynamic Safety Stock
+By predicting the P90 quantile, we successfully generated a **dynamic Safety Stock target**. 
+- On days where the model detects high uncertainty (e.g., highly volatile historical conditions), the P90 prediction automatically scales up, instructing the warehouse to hold more buffer inventory.
+- On stable days, the P90 boundary tightens, preventing the company from wasting money over-stocking.
+
+This transforms the project from a theoretical Kaggle accuracy competition into a production-ready Operations Research tool that directly manages inventory risk.
