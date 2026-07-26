@@ -89,32 +89,28 @@ def greeks_for_chain(options_df, r=0.045):
 
 
 def print_greeks_summary(df):
-    """Prints a clean breakdown of Greeks for calls and puts."""
-    print("\n" + "="*60)
-    print("GREEKS SUMMARY (Sample — Near-The-Money Contracts)")
-    print("="*60)
+    """Prints a clean breakdown of Greeks for calls and puts by ticker."""
+    print("\n" + "="*70)
+    print("GREEKS SUMMARY (MULTI-REGIME)")
+    print("="*70)
 
-    spot = df['spot_price'].iloc[0]
-    # Filter to contracts within 10% of spot price (near-the-money)
-    ntm = df[(df['strike'] >= spot * 0.92) & (df['strike'] <= spot * 1.08)]
-
-    for opt_type in ['call', 'put']:
-        subset = ntm[ntm['option_type'] == opt_type].sort_values('strike')
-        print(f"\n--- {opt_type.upper()}S (Near-the-Money) ---")
-        print(subset[['strike', 'expiry', 'market_price', 'delta', 'gamma', 'theta', 'vega']].to_string(index=False))
-
-    print("\n" + "="*60)
-    print("INTERPRETATION")
-    print("="*60)
-    calls_ntm = ntm[ntm['option_type'] == 'call'].copy()
-    calls_ntm['dist_to_spot'] = (calls_ntm['strike'] - spot).abs()
-    atm_call = calls_ntm.sort_values('dist_to_spot').iloc[0]
-    print(f"\nFor the ~At-The-Money Call (Strike ${atm_call['strike']}):")
-    print(f"  Delta = {atm_call['delta']:.4f}  => Option moves ${atm_call['delta']:.2f} for every $1 move in AAPL")
-    print(f"  Gamma = {atm_call['gamma']:.4f}  => Delta changes by {atm_call['gamma']:.4f} for every $1 move in AAPL")
-    print(f"  Theta = {atm_call['theta']:.4f}  => Option loses ${abs(atm_call['theta']):.4f} in value per day")
-    print(f"  Vega  = {atm_call['vega']:.4f}   => Option gains ${atm_call['vega']:.4f} for every 1% rise in volatility")
-    print("="*60)
+    tickers = df['ticker'].unique()
+    for ticker in tickers:
+        print(f"\n[{ticker}] INTERPRETATION")
+        ticker_df = df[df['ticker'] == ticker]
+        spot = ticker_df['spot_price'].iloc[0]
+        
+        calls = ticker_df[ticker_df['option_type'] == 'call'].copy()
+        if calls.empty: continue
+        calls['dist_to_spot'] = (calls['strike'] - spot).abs()
+        atm_call = calls.sort_values('dist_to_spot').iloc[0]
+        
+        print(f"For the ~At-The-Money Call (Strike ${atm_call['strike']}):")
+        print(f"  Delta = {atm_call['delta']:.4f}  => Option moves ${atm_call['delta']:.2f} for every $1 move in {ticker}")
+        print(f"  Gamma = {atm_call['gamma']:.4f}  => Delta changes by {atm_call['gamma']:.4f} for every $1 move in {ticker}")
+        print(f"  Theta = {atm_call['theta']:.4f}  => Option loses ${abs(atm_call['theta']):.4f} in value per day")
+        print(f"  Vega  = {atm_call['vega']:.4f}   => Option gains ${atm_call['vega']:.4f} for every 1% rise in volatility")
+    print("="*70)
 
 
 if __name__ == '__main__':

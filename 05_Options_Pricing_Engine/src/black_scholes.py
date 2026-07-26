@@ -78,31 +78,37 @@ def price_options_chain(options_df, r=0.045):
 
 
 def print_summary(options_df):
-    """Prints a clean summary of the mispricing analysis."""
-    print("\n" + "="*55)
-    print("BLACK-SCHOLES MISPRICING ANALYSIS")
-    print("="*55)
-
-    mae = options_df['mispricing'].abs().mean()
-    mae_pct = options_df['mispricing_pct'].abs().mean()
+    """Prints a clean summary of the mispricing analysis by ticker."""
+    print("\n" + "="*65)
+    print("BLACK-SCHOLES MISPRICING ANALYSIS (MULTI-REGIME)")
+    print("="*65)
 
     print(f"\nTotal contracts analyzed: {len(options_df)}")
-    print(f"Mean Absolute Error (MAE):     ${mae:.4f}")
-    print(f"Mean Absolute Error (%):       {mae_pct:.2f}%")
-
-    print("\n--- By Option Type ---")
-    for opt_type in ['call', 'put']:
-        subset = options_df[options_df['option_type'] == opt_type]
-        print(f"  {opt_type.capitalize()}s  |  MAE: ${subset['mispricing'].abs().mean():.4f}  |  MAE%: {subset['mispricing_pct'].abs().mean():.2f}%")
+    
+    tickers = options_df['ticker'].unique()
+    
+    for ticker in tickers:
+        subset = options_df[options_df['ticker'] == ticker]
+        mae = subset['mispricing'].abs().mean()
+        mae_pct = subset['mispricing_pct'].abs().mean()
+        
+        print(f"\n--- {ticker} (N={len(subset)} contracts) ---")
+        print(f"Mean Absolute Error (MAE):     ${mae:.4f}")
+        print(f"Mean Absolute Error (%):       {mae_pct:.2f}%")
+        
+        for opt_type in ['call', 'put']:
+            type_subset = subset[subset['option_type'] == opt_type]
+            if len(type_subset) > 0:
+                print(f"  {opt_type.capitalize()}s  |  MAE: ${type_subset['mispricing'].abs().mean():.4f}  |  MAE%: {type_subset['mispricing_pct'].abs().mean():.2f}%")
 
     print("\n--- Most Underpriced by Market (BS says BUY) ---")
-    underpriced = options_df.nsmallest(5, 'mispricing')[['strike', 'option_type', 'expiry', 'market_price', 'bs_price', 'mispricing_pct']]
+    underpriced = options_df.nsmallest(5, 'mispricing')[['ticker', 'strike', 'option_type', 'expiry', 'market_price', 'bs_price', 'mispricing_pct']]
     print(underpriced.to_string(index=False))
 
     print("\n--- Most Overpriced by Market (BS says SELL) ---")
-    overpriced = options_df.nlargest(5, 'mispricing')[['strike', 'option_type', 'expiry', 'market_price', 'bs_price', 'mispricing_pct']]
+    overpriced = options_df.nlargest(5, 'mispricing')[['ticker', 'strike', 'option_type', 'expiry', 'market_price', 'bs_price', 'mispricing_pct']]
     print(overpriced.to_string(index=False))
-    print("="*55)
+    print("="*65)
 
 
 if __name__ == '__main__':

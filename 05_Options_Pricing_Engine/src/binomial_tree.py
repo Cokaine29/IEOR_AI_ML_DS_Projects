@@ -103,40 +103,70 @@ def convergence_analysis(S, K, T, r, sigma, option_type='call', bs_price=None):
 
 def run_convergence_demo():
     """
-    Run the convergence demo on a sample at-the-money AAPL call option.
+    Run the convergence demo on a sample at-the-money call option for each ticker.
     """
     from black_scholes import black_scholes_price
 
-    # Use real AAPL values from our data fetcher
-    S = 321.66      # Spot price
-    K = 320.0       # Strike (near at-the-money)
-    T = 7 / 365    # 7 days to expiry (approximately July 31 from today)
-    r = 0.045       # Risk-free rate
-    sigma = 0.2458  # Historical volatility
+    try:
+        options_df = pd.read_csv(os.path.join('data', 'options_chain.csv'))
+    except FileNotFoundError:
+        print("Run data_fetcher.py first to get the options chain.")
+        return
 
-    bs = black_scholes_price(S, K, T, r, sigma, option_type='call')
+    print("="*70)
+    print("BINOMIAL TREE CONVERGENCE TO BLACK-SCHOLES (MULTI-REGIME)")
+    print("="*70)
 
-    print("="*60)
-    print("BINOMIAL TREE CONVERGENCE TO BLACK-SCHOLES")
-    print(f"AAPL At-The-Money Call | Strike=${K} | T={T*365:.0f} days")
-    print(f"Black-Scholes Price: ${bs:.4f}")
-    print("="*60)
+    all_results = []
+    
+    tickers = options_df['ticker'].unique()
+    for ticker in tickers:
+        subset = options_df[(options_df['ticker'] == ticker) & (options_df['option_type'] == 'call')].copy()
+        if subset.empty: continue
+        
+        # Find ATM option
+        spot = subset['spot_price'].iloc[0]
+        sigma = subset['sigma'].iloc[0]
+        subset['dist'] = (subset['strike'] - spot).abs()
+        atm_opt = subset.sort_values('dist').iloc[0]
+        
+        S = spot
+        K = atm_opt['strike']
+        # Rough T approx from first expiry
+        today = pd.Timestamp.today().normalize()
+        expiry = pd.Timestamp(atm_opt['expiry'])
+        T_days = (expiry - today).days
+        if T_days <= 0: T_days = 7
+        T = T_days / 365.0
+        r = 0.045
+        
+        bs = black_scholes_price(S, K, T, r, sigma, option_type='call')
+        
+        print(f"\n--- {ticker} ATM Call | Strike=${K} | Spot=${S:.2f} | sigma={sigma*100:.1f}% ---")
+        print(f"Black-Scholes Price: ${bs:.4f}")
+        
+        results = convergence_analysis(S, K, T, r, sigma, option_type='call', bs_price=bs)
+        results['ticker'] = ticker
+        all_results.append(results)
+        
+        print(results[['N_steps', 'binomial_price', 'diff_from_bs']].to_string(index=False))
+        
+        # Find convergence
+        converged = results[results['diff_from_bs'] < 0.01]
+        if not converged.empty:
+            convergence_N = converged.iloc[0]['N_steps']
+            print(f"-> Convergence within $0.01 achieved at N = {int(convergence_N)} steps")
+        else:
+            print(f"-> Did not converge within $0.01 in max steps.")
 
-    results = convergence_analysis(S, K, T, r, sigma, option_type='call', bs_price=bs)
-    print(results.to_string(index=False))
-
-    # Find the N where convergence is within $0.01 of Black-Scholes
-    converged = results[results['diff_from_bs'] < 0.01]
-    if not converged.empty:
-        convergence_N = converged.iloc[0]['N_steps']
-        print(f"\nConvergence within $0.01 of Black-Scholes achieved at N = {int(convergence_N)} steps")
-
-    # Save results
-    results.to_csv(os.path.join('data', 'binomial_convergence.csv'), index=False)
-    print("Convergence results saved to data/binomial_convergence.csv")
-    print("="*60)
-
-    return results, bs
+    if all_results:
+        final_results = pd.concat(all_results, ignore_index=True)
+        final_results.to_csv(os.path.join('data', 'binomial_convergence.csv'), index=False)
+        print("\nConvergence results saved to data/binomial_convergence.csv")
+        print("="*70)
+        return final_results
+    
+    return None
 
 
 if __name__ == '__main__':

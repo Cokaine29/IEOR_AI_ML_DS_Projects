@@ -3,101 +3,107 @@ import pandas as pd
 import numpy as np
 import os
 
-def fetch_options_data(ticker_symbol='AAPL'):
+def fetch_options_data(tickers=['AAPL', 'NVDA', 'JNJ']):
     """
-    Fetches the real options chain and historical price data for a given stock.
-    
-    Steps:
-    1. Get current stock price
-    2. Fetch historical prices (needed to calculate sigma - historical volatility)
-    3. Fetch live options chain (the list of all available contracts)
-    4. Save everything to CSV for offline use
+    Fetches the real options chain and historical price data for multiple stocks.
     """
-    print(f"--- Fetching data for {ticker_symbol} ---")
-    ticker = yf.Ticker(ticker_symbol)
-
-    # --- 1. Get current stock price ---
-    hist_recent = ticker.history(period='1d')
-    spot_price = hist_recent['Close'].iloc[-1]
-    print(f"Current {ticker_symbol} Spot Price: ${spot_price:.2f}")
-
-    # --- 2. Get 1 year of historical data to calculate volatility (sigma) ---
-    print("Fetching 1 year of historical price data for volatility calculation...")
-    hist_1yr = ticker.history(period='1y')
+    print(f"--- Fetching data for basket: {tickers} ---")
     
-    # Strip timezone info
-    if hist_1yr.index.tz is not None:
-        hist_1yr.index = hist_1yr.index.tz_convert(None)
+    all_options = []
+    all_hist_prices = []
     
-    # Calculate daily log returns and annualize the standard deviation to get sigma
-    log_returns = np.log(hist_1yr['Close'] / hist_1yr['Close'].shift(1)).dropna()
-    sigma = log_returns.std() * np.sqrt(252)  # Annualized volatility
-    print(f"Calculated Historical Volatility (sigma): {sigma:.4f} ({sigma*100:.2f}%)")
+    for ticker_symbol in tickers:
+        print(f"\nProcessing {ticker_symbol}...")
+        ticker = yf.Ticker(ticker_symbol)
 
-    # --- 3. Fetch options chain ---
-    # Get available expiry dates
-    expiry_dates = ticker.options
-    print(f"\nAvailable expiry dates: {expiry_dates[:5]}...")  # Show first 5
+        # --- 1. Get current stock price ---
+        hist_recent = ticker.history(period='1d')
+        spot_price = hist_recent['Close'].iloc[-1]
+        print(f"Current Spot Price: ${spot_price:.2f}")
 
-    # Skip very near-term (today/this week) expiries — they often have no bid/ask
-    # Pick expiry dates 3–6 months out for realistic liquid contracts
-    selected_expiries = expiry_dates[3:6] if len(expiry_dates) >= 6 else expiry_dates
-    
-    all_calls = []
-    all_puts = []
-    
-    for expiry in selected_expiries:
-        print(f"  Fetching options chain for expiry: {expiry}...")
-        chain = ticker.option_chain(expiry)
+        # --- 2. Get 1 year of historical data to calculate volatility (sigma) ---
+        hist_1yr = ticker.history(period='1y')
         
-        # Tag each row with its expiry date
-        calls = chain.calls.copy()
-        calls['expiry'] = expiry
-        calls['option_type'] = 'call'
+        # Strip timezone info
+        if hist_1yr.index.tz is not None:
+            hist_1yr.index = hist_1yr.index.tz_convert(None)
         
-        puts = chain.puts.copy()
-        puts['expiry'] = expiry
-        puts['option_type'] = 'put'
+        hist_prices = hist_1yr[['Close']].copy()
+        hist_prices['ticker'] = ticker_symbol
+        all_hist_prices.append(hist_prices)
         
-        all_calls.append(calls)
-        all_puts.append(puts)
+        # Calculate daily log returns and annualize the standard deviation to get sigma
+        log_returns = np.log(hist_1yr['Close'] / hist_1yr['Close'].shift(1)).dropna()
+        sigma = log_returns.std() * np.sqrt(252)  # Annualized volatility
+        print(f"Calculated Historical Volatility (sigma): {sigma:.4f} ({sigma*100:.2f}%)")
 
-    # Combine all expiry dates into one dataframe
-    options_df = pd.concat(all_calls + all_puts, ignore_index=True)
+        # --- 3. Fetch options chain ---
+        expiry_dates = ticker.options
+        
+        if len(expiry_dates) < 3:
+            print(f"Warning: Not enough expiries for {ticker_symbol}. Skipping.")
+            continue
 
-    # Keep only the columns we need for pricing
-    cols_to_keep = ['contractSymbol', 'strike', 'lastPrice', 'bid', 'ask',
-                    'impliedVolatility', 'expiry', 'option_type']
-    options_df = options_df[cols_to_keep]
+        # Skip very near-term (today/this week) expiries
+        # Pick expiry dates 3–6 months out for realistic liquid contracts
+        selected_expiries = expiry_dates[3:6] if len(expiry_dates) >= 6 else expiry_dates
+        
+        all_calls = []
+        all_puts = []
+        
+        for expiry in selected_expiries:
+            chain = ticker.option_chain(expiry)
+            
+            calls = chain.calls.copy()
+            calls['expiry'] = expiry
+            calls['option_type'] = 'call'
+            
+            puts = chain.puts.copy()
+            puts['expiry'] = expiry
+            puts['option_type'] = 'put'
+            
+            all_calls.append(calls)
+            all_puts.append(puts)
 
-    # Use mid-price (average of bid and ask) as the market price
-    # If both bid and ask are zero (market closed or illiquid), fall back to lastPrice
-    options_df['market_price'] = options_df.apply(
-        lambda r: (r['bid'] + r['ask']) / 2 if (r['bid'] > 0 or r['ask'] > 0) else r['lastPrice'],
-        axis=1
-    )
+        # Combine all expiry dates into one dataframe for this ticker
+        ticker_options_df = pd.concat(all_calls + all_puts, ignore_index=True)
+
+        cols_to_keep = ['contractSymbol', 'strike', 'lastPrice', 'bid', 'ask',
+                        'impliedVolatility', 'expiry', 'option_type']
+        ticker_options_df = ticker_options_df[cols_to_keep]
+
+        # Use mid-price (average of bid and ask) as the market price
+        ticker_options_df['market_price'] = ticker_options_df.apply(
+            lambda r: (r['bid'] + r['ask']) / 2 if (r['bid'] > 0 or r['ask'] > 0) else r['lastPrice'],
+            axis=1
+        )
+        
+        ticker_options_df = ticker_options_df[ticker_options_df['market_price'] > 0]
+        ticker_options_df['spot_price'] = spot_price
+        ticker_options_df['sigma'] = sigma
+        ticker_options_df['ticker'] = ticker_symbol
+        
+        all_options.append(ticker_options_df)
+
+    # --- Combine all tickers ---
+    final_options_df = pd.concat(all_options, ignore_index=True)
+    final_hist_prices = pd.concat(all_hist_prices)
     
-    # Drop rows where we have no price at all
-    options_df = options_df[options_df['market_price'] > 0]
-
-    # Add the spot price and sigma as columns for easy access downstream
-    options_df['spot_price'] = spot_price
-    options_df['sigma'] = sigma
-
-    print(f"\nTotal liquid options contracts fetched: {len(options_df)}")
+    print(f"\nTotal liquid options contracts fetched across basket: {len(final_options_df)}")
 
     # --- 4. Save to CSV ---
     os.makedirs('data', exist_ok=True)
-    options_df.to_csv('data/options_chain.csv', index=False)
-    hist_1yr[['Close']].to_csv('data/historical_prices.csv')
+    final_options_df.to_csv('data/options_chain.csv', index=False)
+    final_hist_prices.to_csv('data/historical_prices.csv')
     
     print(f"Options chain saved to data/options_chain.csv")
     print(f"Historical prices saved to data/historical_prices.csv")
     
-    return options_df, sigma, spot_price
+    return final_options_df
 
 
 if __name__ == '__main__':
-    df, sigma, spot = fetch_options_data('AAPL')
+    df = fetch_options_data(['AAPL', 'NVDA', 'JNJ'])
     print("\n--- Sample of fetched data ---")
-    print(df[['strike', 'option_type', 'expiry', 'market_price', 'spot_price', 'sigma']].head(10).to_string())
+    print(df[['ticker', 'strike', 'option_type', 'expiry', 'market_price', 'spot_price', 'sigma']].head(5).to_string())
+

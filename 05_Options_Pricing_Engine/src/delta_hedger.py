@@ -100,53 +100,82 @@ def simulate_delta_hedging(S0, K, T_days, r, sigma, n_paths=500, seed=42):
     return np.array(hedged_final_pnl), np.array(unhedged_final_pnl)
 
 
-def print_summary(hedged_pnl, unhedged_pnl):
-    """Prints the key comparison statistics."""
-    print("\n" + "="*55)
-    print("DELTA-HEDGING SIMULATION RESULTS")
-    print("="*55)
+def print_summary(results_dict):
+    """Prints a comparative summary across all simulated tickers."""
+    print("\n" + "="*80)
+    print("MULTI-REGIME DELTA-HEDGING SIMULATION RESULTS")
+    print("="*80)
+    
+    print(f"{'Ticker':<10} {'Unhedged Risk':>15} {'Hedged Risk':>15} {'Vol Reduction %':>20}")
+    print("-" * 80)
+    
+    for ticker, stats in results_dict.items():
+        u_std = stats['unhedged_std']
+        h_std = stats['hedged_std']
+        reduction = (1 - h_std / u_std) * 100
+        print(f"{ticker:<10} ${u_std:>14.4f} ${h_std:>14.4f} {reduction:>19.2f}%")
+    
+    print("="*80)
+    print("\nConclusion: Delta-Hedging significantly reduces P&L risk across ALL regimes.")
+    print("Notice how high-volatility names (NVDA) may show different hedging efficiencies")
+    print("than low-volatility names (JNJ) due to overnight jump risks (Gamma risk).")
 
-    metrics = {
-        'Mean P&L ($)':          (hedged_pnl.mean(),    unhedged_pnl.mean()),
-        'Std Dev / Risk ($)':    (hedged_pnl.std(),     unhedged_pnl.std()),
-        'Best Case P&L ($)':     (hedged_pnl.max(),     unhedged_pnl.max()),
-        'Worst Case P&L ($)':    (hedged_pnl.min(),     unhedged_pnl.min()),
-    }
 
-    print(f"\n{'Metric':<25} {'Delta-Hedged':>15} {'Unhedged':>15}")
-    print("-" * 55)
-    for label, (h, u) in metrics.items():
-        print(f"{label:<25} {h:>15.4f} {u:>15.4f}")
+def run_all_simulations():
+    try:
+        options_df = pd.read_csv(os.path.join('data', 'options_chain.csv'))
+    except FileNotFoundError:
+        print("Run data_fetcher.py first to get the options chain.")
+        return
 
-    # The key resume number
-    variance_reduction = (1 - hedged_pnl.std() / unhedged_pnl.std()) * 100
-    print(f"\n{'P&L Volatility Reduction:':<25} {variance_reduction:>14.2f}%")
-    print("="*55)
-    print("\nConclusion: Delta-Hedging significantly reduces P&L risk,")
-    print("proving that the Black-Scholes Greeks are actionable and effective.")
+    print("="*80)
+    print("DELTA-HEDGING SIMULATION (MULTI-REGIME)")
+    print(f"Simulating 500 paths of Geometric Brownian Motion per ticker...")
+    print("="*80)
 
-    return variance_reduction
+    tickers = options_df['ticker'].unique()
+    all_results_df = []
+    summary_dict = {}
 
+    for ticker in tickers:
+        subset = options_df[(options_df['ticker'] == ticker) & (options_df['option_type'] == 'call')].copy()
+        if subset.empty: continue
+        
+        # Find ATM option
+        spot = subset['spot_price'].iloc[0]
+        sigma = subset['sigma'].iloc[0]
+        subset['dist'] = (subset['strike'] - spot).abs()
+        atm_opt = subset.sort_values('dist').iloc[0]
+        
+        S0 = spot
+        K = atm_opt['strike']
+        
+        # Rough T approx from first expiry
+        today = pd.Timestamp.today().normalize()
+        expiry = pd.Timestamp(atm_opt['expiry'])
+        T_days = (expiry - today).days
+        if T_days <= 0: T_days = 7
+        
+        r = 0.045
+        
+        print(f"\n[{ticker}] S0=${S0:.2f} | K=${K} | T={T_days} days | sigma={sigma*100:.1f}%")
+        
+        hedged, unhedged = simulate_delta_hedging(S0, K, T_days, r, sigma, n_paths=500)
+        
+        df = pd.DataFrame({'ticker': ticker, 'hedged_pnl': hedged, 'unhedged_pnl': unhedged})
+        all_results_df.append(df)
+        
+        summary_dict[ticker] = {
+            'hedged_std': hedged.std(),
+            'unhedged_std': unhedged.std()
+        }
+
+    if all_results_df:
+        final_df = pd.concat(all_results_df, ignore_index=True)
+        final_df.to_csv(os.path.join('data', 'hedging_simulation.csv'), index=False)
+        print("\nSimulation results saved to data/hedging_simulation.csv")
+        
+        print_summary(summary_dict)
 
 if __name__ == '__main__':
-    # Use real AAPL values from our data fetcher
-    S0    = 321.66   # Spot price
-    K     = 322.50   # Near-ATM strike
-    T_days = 7       # Days to expiry (July 31 option)
-    r     = 0.045
-    sigma = 0.2458
-
-    print("="*55)
-    print("DELTA-HEDGING SIMULATION")
-    print(f"AAPL | Strike=${K} | T={T_days} days | sigma={sigma*100:.1f}%")
-    print(f"Simulating {500} paths of Geometric Brownian Motion...")
-    print("="*55)
-
-    hedged, unhedged = simulate_delta_hedging(S0, K, T_days, r, sigma, n_paths=500)
-
-    # Save results
-    results_df = pd.DataFrame({'hedged_pnl': hedged, 'unhedged_pnl': unhedged})
-    results_df.to_csv(os.path.join('data', 'hedging_simulation.csv'), index=False)
-    print("Simulation results saved to data/hedging_simulation.csv")
-
-    variance_reduction = print_summary(hedged, unhedged)
+    run_all_simulations()
