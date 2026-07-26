@@ -38,13 +38,10 @@ constraint and identified which approach catches early-stage degradation soonest
 what actually prevents downtime." Ties directly into your MTP's Smart Manufacturing/Industry
 4.0 focus — this project and your thesis reinforce the same specialization.
 
-**Draft resume bullet shape (fill in numbers after build):**
-- Benchmarked **Autoencoder**, **Isolation Forest**, and **One-Class SVM** for unsupervised
-  fault detection on the **CWRU bearing dataset**, training only on healthy-state signals
-- Achieved **__% F1** in fault detection with **Autoencoder reconstruction error**, and
-  flagged early-stage degradation **__% earlier** than the strongest classical baseline
-- Characterized detection latency across fault severities, informing which method suits
-  early-warning vs. confirmed-failure maintenance triggers
+**Final Resume Bullets:**
+- Benchmarked unsupervised anomaly detection models on the **CWRU bearing dataset** to identify mechanical failures under the real-world industrial constraint of severe label scarcity.
+- Engineered 15 time/frequency-domain features (e.g., **Kurtosis**, **Spectral Entropy**) for **Isolation Forest** baselines, and implemented a **Short-Time Fourier Transform (STFT)** pipeline for a **PyTorch 2D CNN Autoencoder**.
+- Achieved a **97.6% F1 score** on early-stage (**0.007"**) defects with the 2D Autoencoder, matching the strongest classical baseline while eliminating the need for manual, domain-specific feature engineering.
 
 ---
 
@@ -75,12 +72,10 @@ product-shaped solution.
 has to read hundreds of genuine ones. I built a pipeline that filters out fakes *and*
 summarizes what's left, so the output is something a real user could act on."
 
-**Draft resume bullet shape:**
-- Fine-tuned **RoBERTa (LoRA)** for fake-review classification on a real Amazon/Yelp
-  dataset using stylometric + TF-IDF features, achieving **__% accuracy / F1: __**
-- Built a summarization layer using **BART/PEGASUS** over filtered genuine reviews,
-  achieving **ROUGE-L: __**
-- Delivered an end-to-end pipeline from raw reviews to trustworthy, buyer-ready summaries
+**Final Resume Bullets:**
+- Fine-tuned a **RoBERTa** transformer to classify fake e-commerce reviews, addressing severe data leakage by using **TF-IDF + NearestNeighbors clustering** to isolate near-duplicate spam templates.
+- Built a **GroupShuffleSplit** pipeline that grouped 453 spam templates together during cross-validation, correcting an artificially inflated baseline and establishing a rigorous evaluation setup.
+- Achieved an honest **0.943 F1 Score** out-of-sample (outperforming a classical TF-IDF baseline of **0.842**), and paired detection with a **BART** summarization layer to extract trustworthy customer insights.
 
 ---
 
@@ -110,12 +105,10 @@ and a promo-driven one behave completely differently. I benchmarked models per d
 profile and showed which forecasting approach fits which pattern, rather than reporting one
 number that hides the real variance."
 
-**Draft resume bullet shape:**
-- Benchmarked **ARIMA/SARIMA**, **Prophet**, and **LSTM** for SKU-level demand forecasting
-  on the **Walmart M5** dataset across steady, seasonal, and intermittent demand profiles
-- Achieved best **MAPE: __%** overall, with **[Model]** outperforming by **__%** on
-  seasonal SKUs and **[Model]** on volatile/promo-driven SKUs
-- Recommended a profile-specific model selection strategy over a single blended forecaster
+**Final Resume Bullets:**
+- Benchmarked **ARIMA**, **Prophet**, and **LightGBM** for SKU-level demand on the **M5 (Walmart) dataset**. Overcame severe MAPE artifacts on intermittent demand by implementing **WMAPE**, proving Prophet and LightGBM tied (~46% WMAPE) on point-forecasting volatile items.
+- Upgraded the pipeline to **Quantile Regression (P10/P50/P90) in LightGBM** to move beyond point-forecasts, generating a mathematically calibrated **80.0% prediction interval** (hitting the exact 80% theoretical target) to capture volatile demand spikes.
+- Implemented a dynamic **Safety Stock policy** using the P90 forecast, reducing the simulated stockout rate from **50.0%** (naive P50 mean) down to **16.7%** — a **67% reduction in stockouts** without over-inflating inventory.
 
 ---
 
@@ -149,12 +142,10 @@ efficient frontier in hindsight. The real test is whether that allocation still 
 out-of-sample — so I backtested it on a rolling basis against an equal-weight baseline to
 see if the optimization actually holds up."
 
-**Draft resume bullet shape:**
-- Formulated and solved **Markowitz mean-variance portfolio optimization** using **Gurobi**
-  on real historical price data for a **__-stock** basket
-- Backtested the optimized allocation **out-of-sample** on a rolling basis, achieving
-  **Sharpe ratio: __** vs. **__** for an equal-weight baseline
-- Reduced realized portfolio volatility by **__%** while maintaining comparable returns
+**Final Resume Bullets:**
+- Formulated and solved a **Markowitz Mean-Variance optimization** model using **Gurobi** to dynamically allocate capital across a diverse 10-asset portfolio.
+- Implemented a rigorous **Rolling Out-of-Sample Backtester** to simulate realistic trading desk conditions, preventing hindsight bias by continuously rebalancing based on 12-month trailing covariance matrices.
+- Outperformed a naive equal-weight baseline out-of-sample, successfully penalizing highly volatile assets and adapting to changing market regimes to yield a superior risk-adjusted return.
 
 ---
 
