@@ -11,11 +11,13 @@ This project takes an **Operations Research (OR) approach** by doing two things 
 
 ## Key Results (Out-of-Sample, Real M5 Dataset)
 
-| Model | Profile | MAPE | Verdict |
+| Model | Profile | WMAPE / MAPE | Verdict |
 |---|---|---|---|
-| ARIMA (5,1,0) | Steady Demand | **37.6%** | ✅ Best for stable items |
-| Facebook Prophet | Seasonal Demand | **233.5%** | ❌ Collapses on volatile items |
-| LightGBM (P50) | Volatile Demand | **65.7%** | ✅ 3.5× better than Prophet |
+| ARIMA (5,1,0) | Steady Demand | **35.0% WMAPE** | ✅ Best for stable items |
+| Facebook Prophet | Seasonal Demand | **45.9% WMAPE** | ❌ Fails to provide Safety Stock bounds |
+| LightGBM (P50) | Volatile Demand | **48.4% WMAPE** | ✅ Ties Prophet on point-forecast, but enables Quantile Regression |
+
+*Note: Initial tests showed a 233.5% MAPE for Prophet vs 65.7% for LightGBM. However, transitioning to WMAPE revealed this was an artifact of MAPE blowing up on near-zero intermittent demand. Prophet and LightGBM effectively tie on point-forecasting, but LightGBM is chosen because it supports Quantile Regression for Safety Stock generation.*
 
 ### Quantile Calibration Results (Volatile Profile)
 | Metric | Value | What it Means |
@@ -58,7 +60,7 @@ graph TD
     E --> H[Feature Engineering<br/>Lags & Rolling Means]
     H --> I[LightGBM Quantile Regression<br/>P10, P50, P90]
 
-    F --> J[Point Forecast<br/>MAPE: 37.6%]
+    F --> J[Point Forecast<br/>WMAPE: 35.0%]
     G --> J
     I --> K[Probabilistic Forecast<br/>80% Coverage · 67% Fewer Stockouts]
 ```

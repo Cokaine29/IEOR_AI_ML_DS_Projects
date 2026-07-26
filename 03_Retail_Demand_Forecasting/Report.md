@@ -11,15 +11,16 @@ In the final iteration, we upgrade the pipeline from simple **Point Forecasting*
 
 ## Quantitative Results (Out-of-Sample, Real M5 Dataset)
 
-### Per-Profile Model Benchmarking
+### Per-Profile Model Benchmarking (WMAPE vs MAPE)
 
-| Model | Profile | Out-of-Sample MAPE |
+| Model | Profile | Out-of-Sample Metric |
 |---|---|---|
-| ARIMA (5,1,0) | Steady Demand | **37.6%** |
-| Facebook Prophet | Seasonal/Volatile | **233.5%** ❌ |
-| LightGBM (P50 Quantile) | Volatile Demand | **65.7%** ✅ |
+| ARIMA (5,1,0) | Steady Demand | **35.0% WMAPE** |
+| Facebook Prophet | Seasonal/Volatile | **45.9% WMAPE** (233.5% MAPE) |
+| LightGBM (P50 Quantile) | Volatile Demand | **48.4% WMAPE** (65.7% MAPE) |
 
-**Key Insight:** Prophet fails catastrophically on volatile items (233.5% MAPE), while LightGBM beats it by **3.5×** on the same data. This is the "No Free Lunch" theorem in action — the model routing is not just theoretical, it is empirically necessary.
+**Key Insight:** Initially, Prophet appeared to fail catastrophically on volatile items (233.5% MAPE) while LightGBM excelled (65.7% MAPE). However, switching to Weighted MAPE (WMAPE) proved this was a mathematical artifact of MAPE blowing up on intermittent near-zero demand. In aggregate, Prophet and LightGBM tied (~46-48% WMAPE) on point-forecasting. 
+*So why use LightGBM?* Because Prophet cannot easily generate dynamic, feature-driven Quantile Regression for Safety Stock. LightGBM can.
 
 ### Quantile Calibration (Safety Stock Verification)
 
@@ -51,8 +52,8 @@ Time-series data is not homogeneous. Through iterative testing across V1→V5 of
 
 ### Profile C: Volatile Demand (Niche Items)
 - **Characteristics:** Sparse, intermittent sales punctuated by seemingly random spikes.
-- **Winning Model:** `LightGBM Regressor (Quantile Objective)` — **MAPE: 65.7%**
-- **Why?** Pure time-series models (LSTM, ARIMA) fail here by predicting the flat mean to minimize RMSE. By engineering explicit tabular features (`lag_1`, `lag_7`, `rolling_mean_7`, `day_of_week`), LightGBM uses decision trees to identify the exact historical conditions that precede a spike.
+- **Winning Model:** `LightGBM Regressor (Quantile Objective)` — **WMAPE: 48.4%**
+- **Why?** Pure time-series models fail to predict the uncertainty bounds of volatile data. While Prophet tied LightGBM on the median point-forecast, by engineering explicit tabular features (`lag_1`, `lag_7`, `rolling_mean_7`, `day_of_week`), LightGBM uses decision trees to identify the exact historical conditions that precede a spike and generate the P90 Safety Stock bound dynamically.
 
 ---
 
