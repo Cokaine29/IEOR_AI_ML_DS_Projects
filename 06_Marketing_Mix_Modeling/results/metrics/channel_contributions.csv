@@ -1,0 +1,9 @@
+Feature,Mean_Contribution,Pct_of_Sales
+Intercept (Baseline),556.88,53.1
+InStore,42.4,4.0
+NewspaperInserts,42.26,4.0
+TV,39.61,3.8
+Website_Campaign,28.47,2.7
+Radio,16.19,1.5
+Discount,8.31,0.8
+Base_Price,-314.25,30.0

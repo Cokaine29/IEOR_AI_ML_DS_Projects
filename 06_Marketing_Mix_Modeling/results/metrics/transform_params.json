@@ -1,0 +1,38 @@
+{
+  "thetas": {
+    "TV": 0.7,
+    "Radio": 0.4,
+    "InStore": 0.7,
+    "NewspaperInserts": 0.0,
+    "Website_Campaign": 0.7
+  },
+  "alphas": {
+    "TV": 3.0,
+    "Radio": 3.0,
+    "InStore": 3.0,
+    "NewspaperInserts": 1.0,
+    "Website_Campaign": 3.0
+  },
+  "gammas": {
+    "TV": 0.6,
+    "Radio": 0.4,
+    "InStore": 0.6,
+    "NewspaperInserts": 0.3,
+    "Website_Campaign": 0.7
+  },
+  "best_cv_r2": 0.7618332867444225,
+  "ref_maxes": {
+    "TV": 746.1150780304872,
+    "Radio": 168.25700452619773,
+    "InStore": 444.7252481921621,
+    "NewspaperInserts": 79.0,
+    "Website_Campaign": 573.779101918672
+  },
+  "raw_spend_means": {
+    "TV": 154.73709677419353,
+    "Radio": 60.193548387096776,
+    "InStore": 83.21209677419353,
+    "NewspaperInserts": 39.41854838709676,
+    "Website_Campaign": 119.76370967741934
+  }
+}

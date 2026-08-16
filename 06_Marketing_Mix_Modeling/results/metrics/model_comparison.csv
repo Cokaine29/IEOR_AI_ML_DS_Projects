@@ -1,0 +1,4 @@
+Model,Train_R2,Train_MAPE,Train_RMSE,Test_R2,Test_MAPE,Test_RMSE
+Ridge,0.849,2.23,20.12,0.0646,3.8,44.16
+Lasso,0.8489,2.23,20.12,0.0691,3.8,44.05
+BayesianRidge,0.8488,2.23,20.13,0.0712,3.81,44.0

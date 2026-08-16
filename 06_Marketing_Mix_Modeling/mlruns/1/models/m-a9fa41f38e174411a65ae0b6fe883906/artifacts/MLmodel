@@ -1,0 +1,23 @@
+artifact_path: file:D:/IEOR_AI_ML_DS_Projects/06_Marketing_Mix_Modeling/mlruns/1/models/m-a9fa41f38e174411a65ae0b6fe883906/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.skops
+    predict_fn: predict
+    python_version: 3.12.10
+  sklearn:
+    code: null
+    pickled_model: model.skops
+    serialization_format: skops
+    sklearn_version: 1.4.1.post1
+    skops_trusted_types: null
+mlflow_version: 3.15.1
+model_id: m-a9fa41f38e174411a65ae0b6fe883906
+model_size_bytes: 6016
+model_uuid: m-a9fa41f38e174411a65ae0b6fe883906
+prompts: null
+run_id: 59d6ed19a903402b8ac4f4d0f2379f2a
+utc_time_created: '2026-08-16 06:48:29.840228'
