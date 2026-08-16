@@ -121,8 +121,6 @@ docker build -t mmm . && docker run mmm
 
 ## Resume Bullets
 
-> **Bullet 1 (What/Why):** Modeled weekly marketing channel attribution for a 5-channel FMCG sales dataset using **adstock transformations** (geometric decay, θ grid-searched per channel) and **Hill saturation curves** (diminishing returns), addressing the real-world constraint that TV and digital spend are highly correlated (VIF=118) and naive regression misallocates credit.
-
-> **Bullet 2 (How/Method):** Benchmarked **Ridge**, **Lasso**, and **Bayesian Ridge** regression on adstock+saturated features using **TimeSeriesSplit CV**, achieving **Test MAPE=3.8%** on a 32-week temporal holdout; tracked 18+ MLflow experiments logging regularization strength, channel decay rates, and all performance metrics.
-
-> **Bullet 3 (Result):** Formulated and solved a **nonlinear budget reallocation program** (SLSQP with 15 random restarts) using fitted Hill response curves, recommending a **+1.8% total sales lift** (+12.7 units/week) by reallocating Radio budget to In-Store and Web channels; deployed the optimizer as a **FastAPI** endpoint and **Streamlit** dashboard, containerized with **Docker**.
+- **Modeled channel attribution** via **adstock** (grid-searched decay, θ) + **Hill saturation** curves on a 5-channel FMCG dataset, correctly recovering ground-truth carryover parameters
+- **Diagnosed severe multicollinearity** (VIF=118) between TV/Digital spend using **Ridge/Lasso/Bayesian Ridge**, achieving **3.8% Test MAPE** on a 32-week temporal holdout despite the resulting low R²
+- **Solved a nonlinear budget reallocation program** (**SLSQP**) recommending a **+1.8% sales lift** by shifting Radio spend to In-Store/Web, deployed via **FastAPI**
