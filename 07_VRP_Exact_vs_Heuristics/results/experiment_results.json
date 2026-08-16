@@ -1,0 +1,58 @@
+[
+  {
+    "instance": "Gen-n9",
+    "n_customers": 8,
+    "exact": {
+      "cost": 299,
+      "time": 0.949061393737793
+    },
+    "sa_avg_cost": 299.0,
+    "sa_avg_time": 2.0003695487976074,
+    "sa_best_cost": 299,
+    "ga_avg_cost": 301.0,
+    "ga_avg_time": 2.000561475753784,
+    "ga_best_cost": 301
+  },
+  {
+    "instance": "Gen-n11",
+    "n_customers": 10,
+    "exact": {
+      "cost": 292,
+      "time": 1.521432876586914
+    },
+    "sa_avg_cost": 292.0,
+    "sa_avg_time": 2.0003209114074707,
+    "sa_best_cost": 292,
+    "ga_avg_cost": 292.0,
+    "ga_avg_time": 2.0005316734313965,
+    "ga_best_cost": 292
+  },
+  {
+    "instance": "Gen-n13",
+    "n_customers": 12,
+    "exact": {
+      "cost": 300,
+      "time": 4.744623422622681
+    },
+    "sa_avg_cost": 300.0,
+    "sa_avg_time": 2.0003528594970703,
+    "sa_best_cost": 300,
+    "ga_avg_cost": 300.0,
+    "ga_avg_time": 2.000471591949463,
+    "ga_best_cost": 300
+  },
+  {
+    "instance": "Gen-n15",
+    "n_customers": 14,
+    "exact": {
+      "cost": 391,
+      "time": 9.119766473770142
+    },
+    "sa_avg_cost": 407.0,
+    "sa_avg_time": 2.0007762908935547,
+    "sa_best_cost": 407,
+    "ga_avg_cost": 391.0,
+    "ga_avg_time": 2.0007174015045166,
+    "ga_best_cost": 391
+  }
+]

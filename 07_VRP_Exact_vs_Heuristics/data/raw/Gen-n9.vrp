@@ -1,0 +1,30 @@
+NAME : Gen-n9
+COMMENT : Synthetic instance with 8 customers
+TYPE : CVRP
+DIMENSION : 9
+EDGE_WEIGHT_TYPE : EUC_2D
+CAPACITY : 100
+NODE_COORD_SECTION
+ 1 50 50
+ 2 29 47
+ 3 48 16
+ 4 24 90
+ 5 5 10
+ 6 17 31
+ 7 64 26
+ 8 51 82
+ 9 3 58
+DEMAND_SECTION
+ 1 0
+ 2 20
+ 3 19
+ 4 17
+ 5 20
+ 6 23
+ 7 11
+ 8 17
+ 9 7
+DEPOT_SECTION
+ 1
+ -1
+EOF
